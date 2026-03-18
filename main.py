@@ -1,3 +1,11 @@
+import sys
+import io
+
+# لإصلاح مشكلة الـ NoneType attribute isatty عند التشغيل بدون Console
+if sys.stdout is None:
+    sys.stdout = io.StringIO()
+if sys.stderr is None:
+    sys.stderr = io.StringIO()
 from fastapi import FastAPI, Request, Form, File, UploadFile, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
