@@ -1,0 +1,50 @@
+name: Build UniPrint Windows EXE
+
+on:
+  # يشتغل لما تضغط زر يدوياً من GitHub
+  workflow_dispatch:
+  # أو يشتغل تلقائياً لما ترفع كود جديد
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller uvicorn fastapi jinja2 python-multipart "qrcode[pil]" pillow websockets watchfiles colorama
+
+      - name: Build EXE with PyInstaller
+        run: |
+          pyinstaller --name "UniPrint" --noconfirm --onefile --windowed `
+            --add-data "templates;templates" `
+            --add-data "static;static" `
+            --hidden-import "uvicorn.logging" `
+            --hidden-import "uvicorn.loops" `
+            --hidden-import "uvicorn.loops.auto" `
+            --hidden-import "uvicorn.protocols" `
+            --hidden-import "uvicorn.protocols.http" `
+            --hidden-import "uvicorn.protocols.http.auto" `
+            --hidden-import "uvicorn.protocols.websockets" `
+            --hidden-import "uvicorn.protocols.websockets.auto" `
+            --hidden-import "uvicorn.lifespan" `
+            --hidden-import "uvicorn.lifespan.on" `
+            --hidden-import "uvicorn.lifespan.off" `
+            main.py
+
+      - name: Upload EXE as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UniPrint-Windows
+          path: dist/UniPrint.exe
+          retention-days: 30

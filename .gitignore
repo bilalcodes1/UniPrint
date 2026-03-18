@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# App data
+orders/
+db/
+static/qr_code.png
+
+# Inno Setup output
+installer_output/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

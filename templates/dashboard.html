@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة إدارة الطلبات</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; font-family: sans-serif; }
+        .sidebar { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 20px; }
+        .status-dot { height: 12px; width: 12px; background-color: #bbb; border-radius: 50%; display: inline-block; }
+        .connected { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
+    </style>
+</head>
+<body>
+    <audio id="notificationSound" src="/static/bell.mp3" preload="auto"></audio>
+
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="sidebar text-center">
+                    <h6 class="mb-3">باركود دخول الطلاب 📱</h6>
+                    <img src="/static/qr_code.png" class="img-fluid rounded mb-3" style="border: 1px solid #eee;">
+                    <div class="p-2 bg-light rounded small mb-3 text-break">{{ server_url }}</div>
+                    <button id="soundToggle" class="btn btn-primary w-100 mb-2">🔊 الصوت مفعل</button>
+                    <div class="form-check form-switch text-start mt-3 mb-2" dir="ltr">
+                        <input class="form-check-input" type="checkbox" id="autoPrintToggle">
+                        <label class="form-check-label ms-2 fw-bold" for="autoPrintToggle" dir="rtl">طباعة تلقائية ⚡</label>
+                    </div>
+                    <button class="btn btn-outline-secondary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#settingsModal">⚙️ بيانات الدخول</button>
+                    <hr>
+                    <button onclick="clearAll()" class="btn btn-danger w-100 mt-2">🗑️ تصفير كل الطلبات</button>
+
+                    <!-- Developer Info -->
+                    <div class="mt-4 pt-3 border-top text-center">
+                        <small class="text-muted d-block mb-1">تطوير وبرمجة</small>
+                        <h6 class="fw-bold mb-0 text-primary">بلال زامل احمد</h6>
+                        <small class="text-muted d-block mb-3" style="font-size: 0.75rem;">قسم علوم الحاسوب</small>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="https://instagram.com/bilalcodes1" target="_blank" class="btn btn-sm btn-light text-danger shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="bi bi-instagram"></i></a>
+                            <a href="https://t.me/bilalcodes1" target="_blank" class="btn btn-sm btn-light text-info shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="bi bi-telegram"></i></a>
+                            <a href="mailto:bil24c1055@uoanbar.edu.iq" class="btn btn-sm btn-light text-secondary shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="bi bi-envelope"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <h5 class="m-0">📋 قائمة الانتظار 
+                                <span id="wsStatus" class="status-dot ms-2"></span>
+                            </h5>
+                            <select id="printerSelect" class="form-select form-select-sm" style="width: 200px;" title="اختر الطابعة">
+                                <option value="">الطابعة الافتراضية</option>
+                            </select>
+                        </div>
+                        <span class="badge bg-dark px-3 py-2" id="ordersCount">الطلبات: 0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الوقت</th>
+                                    <th>الاسم</th>
+                                    <th>القسم</th>
+                                    <th>ملاحظات</th>
+                                    <th>التحكم</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credentials Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">تغيير بيانات الدخول</h5>
+            <button type="button" class="btn-close m-0 ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+                <label class="form-label">اسم المستخدم الجديد</label>
+                <input type="text" id="newUsername" class="form-control" placeholder="مثال: admin" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">كلمة المرور الجديدة</label>
+                <input type="password" id="newPassword" class="form-control" placeholder="******" required>
+            </div>
+          </div>
+          <div class="modal-footer d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="button" class="btn btn-primary" onclick="saveCredentials()">حفظ التغييرات</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let soundEnabled = true;
+        const audio = document.getElementById('notificationSound');
+
+        document.getElementById('soundToggle').onclick = function() {
+            soundEnabled = !soundEnabled;
+            this.innerHTML = soundEnabled ? "🔊 الصوت مفعل" : "🔇 الصوت مغلق";
+            this.classList.toggle('btn-success', soundEnabled);
+            this.classList.toggle('btn-outline-primary', !soundEnabled);
+            if(soundEnabled) { audio.play().then(()=> {audio.pause(); audio.currentTime=0;}); }
+        };
+
+        function loadTable() {
+            fetch('/api/orders').then(r => r.json()).then(data => {
+                document.getElementById('ordersCount').innerText = `الطلبات: ${data.orders.length}`;
+                let html = '';
+                data.orders.forEach(o => {
+                    let timeStr = o.time.split(' ')[1];
+                    let timeParts = timeStr.split(':');
+                    let hours = parseInt(timeParts[0]);
+                    let minutes = timeParts[1];
+                    let seconds = timeParts.length > 2 ? timeParts[2] : "00";
+                    let ampm = hours >= 12 ? 'م' : 'ص';
+                    hours = hours % 12;
+                    hours = hours ? hours : 12; 
+                    let formattedTime = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+                    
+                    html += `<tr>
+                        <td><small class="text-muted" dir="ltr">${formattedTime}</small></td>
+                        <td class="fw-bold">${o.name}</td>
+                        <td><span class="badge bg-light text-dark border">${o.department}</span></td>
+                        <td><small>${o.notes}</small></td>
+                        <td>
+                            <div class="btn-group">
+                                <button onclick="printOrder('${o.file_system_name}')" class="btn btn-sm btn-success">طباعة</button>
+                                <a href="${o.file_path}" target="_blank" class="btn btn-sm btn-primary">فتح</a>
+                                <button onclick="deleteOrder('${o.file_system_name}')" class="btn btn-sm btn-outline-danger">حذف</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                document.getElementById('ordersBody').innerHTML = html || '<tr><td colspan="5" class="text-center py-5 text-muted">لا توجد طلبات حالياً</td></tr>';
+            });
+        }
+
+        function clearAll() {
+            if(confirm("هل أنت متأكد من حذف جميع الطلبات والملفات من الحاسبة؟")) {
+                fetch('/api/delete_all', {method: 'DELETE'});
+            }
+        }
+
+        function deleteOrder(f) { fetch('/api/delete/'+f, {method: 'DELETE'}); }
+        
+        function loadPrinters() {
+            fetch('/api/printers').then(r => r.json()).then(data => {
+                if (data.status === 'success' && data.printers.length > 0) {
+                    let select = document.getElementById('printerSelect');
+                    data.printers.forEach(p => {
+                        let option = document.createElement('option');
+                        option.value = p;
+                        option.text = p.replace(/_/g, ' ');
+                        select.appendChild(option);
+                    });
+                }
+                loadSettings();
+            });
+        }
+
+        const autoPrintToggle = document.getElementById('autoPrintToggle');
+        
+        function loadSettings() {
+            fetch('/api/settings/autoprint').then(r => r.json()).then(data => {
+                autoPrintToggle.checked = data.auto_print;
+                if(data.selected_printer) {
+                    document.getElementById('printerSelect').value = data.selected_printer;
+                }
+            });
+        }
+        
+        autoPrintToggle.addEventListener('change', function() {
+            let printer = document.getElementById('printerSelect').value;
+            fetch('/api/settings/autoprint', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({auto_print: this.checked, printer: printer})
+            });
+        });
+        
+        document.getElementById('printerSelect').addEventListener('change', function() {
+            if(autoPrintToggle.checked) {
+                fetch('/api/settings/autoprint', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({auto_print: true, printer: this.value})
+                });
+            }
+        });
+        
+        function printOrder(f) {
+            let printer = document.getElementById('printerSelect').value;
+            let url = '/api/print/' + f;
+            if (printer) {
+                url += '?printer=' + encodeURIComponent(printer);
+            }
+            fetch(url).then(r => r.json()).then(data => {
+                if(data.status === 'success') {
+                    alert('تم الإرسال للطابعة بنجاح 🖨️');
+                } else {
+                    alert('خطأ في الطباعة: ' + data.message);
+                }
+            });
+        }
+        
+        function saveCredentials() {
+            let u = document.getElementById('newUsername').value;
+            let p = document.getElementById('newPassword').value;
+            if(!u || !p) { alert('يرجى ملء كافة الحقول!'); return; }
+            
+            fetch('/api/settings/credentials', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: u, password: p})
+            }).then(r => r.json()).then(data => {
+                if(data.status === 'success') {
+                    alert('تم تغيير بيانات الدخول بنجاح! سيتم إعادة تحميل الصفحة.');
+                    window.location.reload();
+                } else {
+                    alert('حدث خطأ أثناء حفظ البيانات.');
+                }
+            });
+        }
+
+        function connect() {
+            let ws = new WebSocket(`ws://${window.location.host}/ws`);
+            ws.onopen = () => { document.getElementById('wsStatus').classList.add('connected'); };
+            ws.onmessage = (e) => { 
+                loadTable(); 
+                if(e.data === "new_order" && soundEnabled) {
+                    let clone = audio.cloneNode();
+                    clone.play().catch(err => console.log('Audio play error:', err));
+                }
+            };
+            ws.onclose = () => { 
+                document.getElementById('wsStatus').classList.remove('connected');
+                setTimeout(connect, 2000); 
+            };
+        }
+
+        connect(); loadTable(); loadPrinters();
+    </script>
+</body>
+</html>
